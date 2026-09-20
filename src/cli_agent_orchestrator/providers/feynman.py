@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 ANSI_CODE_PATTERN = r"\x1b(?:\[[0-9;?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))"
 IDLE_PROMPT_PATTERN = os.environ.get(
     "CAO_FEYNMAN_IDLE_PROMPT_REGEX",
-    r"^(?!.*(?:Thinking|musing|Searching|Fetching|Synthesizing|Auditing|Running|Ctrl\+C cancel|/exit)).{0,80}(?:❯|✦|>)\s*$",
+    r"(?:^(?!.*(?:Thinking|musing|Searching|Fetching|Synthesizing|Auditing|Running|Ctrl\+C cancel|/exit)).{0,80}(?:❯|✦|>)\s*$|Type your message|•\s*(?:low|medium|high))",
 )
-IDLE_PROMPT_PATTERN_LOG = os.environ.get("CAO_FEYNMAN_IDLE_LOG_REGEX", r"[❯✦>]")
+IDLE_PROMPT_PATTERN_LOG = os.environ.get("CAO_FEYNMAN_IDLE_LOG_REGEX", r"(?:[❯✦>]|Type your message)")
 PROCESSING_PATTERN = os.environ.get(
     "CAO_FEYNMAN_PROCESSING_REGEX",
     r"(?:Thinking|musing\.\.\.|Searching|Fetching|Synthesizing|Auditing|Running|Ctrl\+C cancel|⏱\s*\d+s)",
@@ -191,20 +191,20 @@ class FeynmanProvider(BaseProvider):
         from cli_agent_orchestrator.services.status_monitor import status_monitor
 
         start = time.time()
-        timeout = 20.0
+        timeout = min(60.0, float(init_timeout))
         while time.time() - start < timeout:
             current = await asyncio.to_thread(status_monitor.get_status, self.terminal_id)
             if current in {TerminalStatus.IDLE, TerminalStatus.COMPLETED}:
                 self._initialized = True
                 return True
+            pane_output = get_backend().get_history(self.session_name, self.window_name)
+            if re.search(SETUP_REQUIRED_PATTERN, pane_output):
+                raise ProviderError(
+                    "Feynman requires model access configuration before first launch. "
+                    "Please run 'feynman setup' in your terminal or configure an API key "
+                    "(e.g. GEMINI_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY)."
+                )
             if current == TerminalStatus.ERROR:
-                pane_output = get_backend().get_history(self.session_name, self.window_name)
-                if re.search(SETUP_REQUIRED_PATTERN, pane_output):
-                    raise ProviderError(
-                        "Feynman requires model access configuration before first launch. "
-                        "Please run 'feynman setup' in your terminal or configure an API key "
-                        "(e.g. GEMINI_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY)."
-                    )
                 raise ProviderError(f"Feynman initialization failed: {pane_output[-300:].strip()}")
             await asyncio.sleep(0.5)
 
