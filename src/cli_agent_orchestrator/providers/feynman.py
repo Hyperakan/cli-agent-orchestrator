@@ -198,7 +198,7 @@ class FeynmanProvider(BaseProvider):
                 self._initialized = True
                 return True
             if current == TerminalStatus.ERROR:
-                pane_output = get_backend().capture_pane(self.session_name, self.window_name)
+                pane_output = get_backend().get_history(self.session_name, self.window_name)
                 if re.search(SETUP_REQUIRED_PATTERN, pane_output):
                     raise ProviderError(
                         "Feynman requires model access configuration before first launch. "
@@ -208,7 +208,7 @@ class FeynmanProvider(BaseProvider):
                 raise ProviderError(f"Feynman initialization failed: {pane_output[-300:].strip()}")
             await asyncio.sleep(0.5)
 
-        pane_output = get_backend().capture_pane(self.session_name, self.window_name)
+        pane_output = get_backend().get_history(self.session_name, self.window_name)
         if re.search(SETUP_REQUIRED_PATTERN, pane_output):
             raise ProviderError(
                 "Feynman requires model access configuration before first launch. "
