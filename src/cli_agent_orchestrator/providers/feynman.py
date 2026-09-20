@@ -239,7 +239,10 @@ class FeynmanProvider(BaseProvider):
         bottom_output = "\n".join(bottom_lines_text)
         has_idle_prompt = any(_is_idle_line(line.strip()) for line in bottom_lines_text)
         has_stable_idle_timer = self._has_stable_idle_timer(tail_output)
-        has_user = bool(re.search(USER_PREFIX_PATTERN, clean_output, re.MULTILINE))
+        has_turn_completed = (
+            bool(re.search(r"↑\d+k?\s*↓\d+k?", clean_output))
+            or bool(re.search(USER_PREFIX_PATTERN, clean_output, re.MULTILINE))
+        )
         has_response = bool(re.search(ASSISTANT_HEADER_PATTERN, clean_output))
         if not has_response:
             has_response = self._has_extractable_response(clean_output)
@@ -254,7 +257,7 @@ class FeynmanProvider(BaseProvider):
             return TerminalStatus.PROCESSING
 
         if has_stable_idle_timer or has_idle_prompt:
-            if has_user and has_response:
+            if has_turn_completed and has_response:
                 return TerminalStatus.COMPLETED
             return TerminalStatus.IDLE
 
@@ -301,17 +304,29 @@ class FeynmanProvider(BaseProvider):
             raise ValueError("No Feynman response found - no assistant header detected")
         else:
             user_matches = list(re.finditer(USER_PREFIX_PATTERN, clean_output, re.MULTILINE))
-            if not user_matches:
-                raise ValueError("No Feynman response found - no user message detected")
-            user_line_end = clean_output.find("\n", user_matches[-1].end())
-            if user_line_end == -1:
-                user_line_end = user_matches[-1].end()
-            search_region = clean_output[user_line_end + 1 :]
+            if user_matches:
+                user_line_end = clean_output.find("\n", user_matches[-1].end())
+                if user_line_end == -1:
+                    user_line_end = user_matches[-1].end()
+                search_region = clean_output[user_line_end + 1 :]
+            else:
+                search_region = clean_output
 
         end_match = re.search(IDLE_PROMPT_PATTERN, search_region, re.MULTILINE)
         candidate_text = search_region[: end_match.start()] if end_match else search_region
-        candidate_lines = candidate_text.splitlines()
 
+        paragraphs = [p.strip() for p in candidate_text.split("\n\n") if p.strip()]
+        for p in reversed(paragraphs):
+            lines = p.splitlines()
+            if any("v0.3." in l or "╭──" in l or "╰──" in l for l in lines):
+                continue
+            if re.search(r"^(?:Translating|Thinking|musing|Searching|Fetching|Synthesizing)", p):
+                continue
+            if _is_chrome_line(p):
+                continue
+            return p
+
+        candidate_lines = candidate_text.splitlines()
         response_lines: list[str] = []
         for raw_line in reversed(candidate_lines):
             line = raw_line.rstrip()
