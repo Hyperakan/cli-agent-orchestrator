@@ -294,7 +294,11 @@ def launch(
         # Forwarded env vars travel in the JSON body so values (which may
         # contain secrets) don't end up in cao-server's HTTP access log.
         # See issue #248.
-        request_timeout = get_server_settings()["mcp_request_timeout"]
+        server_settings = get_server_settings()
+        request_timeout = max(
+            server_settings.get("provider_init_timeout", 120),
+            server_settings.get("mcp_request_timeout", 30),
+        )
         post_kwargs: dict = {"params": params, "timeout": request_timeout}
         if forwarded_env:
             post_kwargs["json"] = {"env_vars": forwarded_env}
