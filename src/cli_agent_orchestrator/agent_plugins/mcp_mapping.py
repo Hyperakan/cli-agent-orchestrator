@@ -125,6 +125,7 @@ PROVIDER_TRANSPORTS: Dict[str, frozenset] = {
     # delivery-matrix test derives its expectations from this table, so the two
     # cannot drift.
     "hermes": frozenset(),
+    "feynman": frozenset(),
     "mock_cli": frozenset(),
 }
 DEFAULT_TRANSPORTS = _STDIO_ONLY
@@ -179,6 +180,7 @@ PROVIDER_CWD_DELIVERY: Dict[str, str] = {
     "copilot_cli": "shim",
     "omp": "shim",
     "hermes": "none",
+    "feynman": "none",
     "mock_cli": "none",
 }
 

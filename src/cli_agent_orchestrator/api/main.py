@@ -2760,6 +2760,7 @@ async def list_providers_endpoint() -> List[Dict]:
         "omp": "omp",
         "grok_cli": "grok",
         "mcode": "mcode",
+        "feynman": "feynman",
     }
     result = []
     for provider, binary in provider_binaries.items():

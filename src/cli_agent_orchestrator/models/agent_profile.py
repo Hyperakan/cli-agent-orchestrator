@@ -117,3 +117,7 @@ class AgentProfile(BaseModel):
     # disabled because those workers are outside CAO's profile, callback, and
     # terminal-accounting boundaries.
     grokNativeWorkflows: Optional[bool] = None
+
+    # Feynman-only. Per-agent Feynman settings mapped to CLI flags at launch
+    # (e.g. {"thinking": "high", "service_tier": "fast"}).
+    feynmanConfig: Optional[Dict[str, Any]] = None

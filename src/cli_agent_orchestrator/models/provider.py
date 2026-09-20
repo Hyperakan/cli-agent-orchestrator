@@ -16,5 +16,6 @@ class ProviderType(str, Enum):
     OMP = "omp"
     GROK_CLI = "grok_cli"
     MINIMAX_CODE = "mcode"
+    FEYNMAN = "feynman"
     # Credentials-free mock provider for tests/CI (no real CLI binary).
     MOCK_CLI = "mock_cli"

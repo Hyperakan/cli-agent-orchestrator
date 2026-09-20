@@ -887,6 +887,7 @@ class TestCwdDelivery:
         ):
             assert PROVIDER_CWD_DELIVERY[shimmed] == "shim", shimmed
         assert PROVIDER_CWD_DELIVERY["hermes"] == "none"
+        assert PROVIDER_CWD_DELIVERY["feynman"] == "none"
         assert PROVIDER_CWD_DELIVERY["mock_cli"] == "none"
 
 
